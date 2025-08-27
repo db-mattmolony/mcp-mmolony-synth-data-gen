@@ -3,6 +3,7 @@ from mcp.server.fastmcp import FastMCP
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from databricks.sdk.core import Config
+from databricks import sql
 import os 
 
 cfg = Config()
