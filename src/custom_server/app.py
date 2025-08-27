@@ -3,8 +3,11 @@ from mcp.server.fastmcp import FastMCP
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from databricks.sdk.core import Config
+import os 
 
 cfg = Config()
+assert os.getenv('DATABRICKS_WAREHOUSE_ID'), "DATABRICKS_WAREHOUSE_ID must be set in app.yaml."
+
 
 
 STATIC_DIR = Path(__file__).parent / "static"

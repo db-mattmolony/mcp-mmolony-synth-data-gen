@@ -11,6 +11,8 @@ dependencies = [
     "fastapi>=0.115.12",
     "mcp[cli]>=1.10.0",
     "uvicorn>=0.34.2",
+    "databricks-sdk>=0.40.0",
+    "databricks-sql-connector>=3.5.0",
 ]
 
 
