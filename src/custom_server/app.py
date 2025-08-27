@@ -5,8 +5,8 @@ from fastapi.responses import FileResponse
 from databricks.sdk.core import Config
 import os 
 
-cfg = Config()
-assert os.getenv('DATABRICKS_WAREHOUSE_ID'), "DATABRICKS_WAREHOUSE_ID must be set in app.yaml."
+# cfg = Config()
+# assert os.getenv('DATABRICKS_WAREHOUSE_ID'), "DATABRICKS_WAREHOUSE_ID must be set in app.yaml."
 
 
 
@@ -23,23 +23,23 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
-@mcp.tool()
-def create_catalog(catalog_name: str) -> str:
-    """
-    Create a new catalog in Databricks using a SQL warehouse
-    """
-    try:
-        query = f"CREATE CATALOG IF NOT EXISTS {catalog_name}"
-        with sql.connect(
-            server_hostname=cfg.host,
-            http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
-            credentials_provider=lambda: cfg.authenticate
-        ) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-                return f"Catalog {catalog_name} created successfully"
-    except Exception as e:
-        return f"Error querying Databricks Warehouse: {e}"
+# @mcp.tool()
+# def create_catalog(catalog_name: str) -> str:
+#     """
+#     Create a new catalog in Databricks using a SQL warehouse
+#     """
+#     try:
+#         query = f"CREATE CATALOG IF NOT EXISTS {catalog_name}"
+#         with sql.connect(
+#             server_hostname=cfg.host,
+#             http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
+#             credentials_provider=lambda: cfg.authenticate
+#         ) as connection:
+#             with connection.cursor() as cursor:
+#                 cursor.execute(query)
+#                 return f"Catalog {catalog_name} created successfully"
+#     except Exception as e:
+#         return f"Error querying Databricks Warehouse: {e}"
 
 
 # Add a dynamic greeting resource
