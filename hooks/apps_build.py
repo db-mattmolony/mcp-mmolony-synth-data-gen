@@ -44,6 +44,13 @@ class AppsBuildHook(BuildHookInterface):
 
         requirements_file.write_text(Path(artifact_path).name, encoding="utf-8")
 
+        app_file = Path("app.yaml")
+        if app_file.exists():
+            self.app.display_info(f"Copying {app_file} to {build_dir}")
+            shutil.copy(app_file, build_dir)
+        else:
+            self.app.display_info(f"{app_file} does not exist, skipping copy")
+
         self.app.display_info(
             f"Apps-compatible build written to {build_dir.absolute()}"
         )
