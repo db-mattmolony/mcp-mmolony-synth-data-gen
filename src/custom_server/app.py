@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from databricks.sdk.core import Config
 from databricks import sql
+from src.custom_server.prompts import load_prompts
 import os 
 
 cfg = Config()
@@ -16,6 +17,8 @@ STATIC_DIR = Path(__file__).parent / "static"
 # Create an MCP server
 mcp = FastMCP("Custom MCP Server on Databricks Apps for creating")
 
+# Load prompts and tools
+load_prompts(mcp)
 
 # Add an addition tool
 @mcp.tool()
@@ -71,35 +74,35 @@ def get_greeting(name: str) -> str:
 mcp_app = mcp.streamable_http_app()
 
 
-@mcp.prompt("synthetic-data-setup")
-def prompt_synthetic_data_setup() -> str:
-    """How to create synthetic data in Databricks: metadata-first flow."""
-    return """# Databricks MCP – Synthetic Data Metadata Setup
+# @mcp.prompt("synthetic-data-setup")
+# def prompt_synthetic_data_setup() -> str:
+#     """How to create synthetic data in Databricks: metadata-first flow."""
+#     return """# Databricks MCP – Synthetic Data Metadata Setup
 
-## Use Case
-This MCP server enables an LLM to generate synthetic datasets inside Databricks in a structured and governed way.  
-The flow is:
-1. Create a catalog and schema to house new datasets.  
-2. Populate metadata tables that describe schemas, tables, and columns.  
-3. Use this metadata as the foundation for synthetic data generation.
+# ## Use Case
+# This MCP server enables an LLM to generate synthetic datasets inside Databricks in a structured and governed way.  
+# The flow is:
+# 1. Create a catalog and schema to house new datasets.  
+# 2. Populate metadata tables that describe schemas, tables, and columns.  
+# 3. Use this metadata as the foundation for synthetic data generation.
 
-## Metadata Tables
-Three core tables are required in every schema:
+# ## Metadata Tables
+# Three core tables are required in every schema:
 
-1. **_schema_metadata**  
-   - Stores schema-level information  
-   - Columns: unique schema identifier, schema name, description  
+# 1. **_schema_metadata**  
+#    - Stores schema-level information  
+#    - Columns: unique schema identifier, schema name, description  
 
-2. **_table_metadata**  
-   - Stores table-level information  
-   - Columns: table identifier, schema identifier, table name, table description, column name, column type, column description  
+# 2. **_table_metadata**  
+#    - Stores table-level information  
+#    - Columns: table identifier, schema identifier, table name, table description, column name, column type, column description  
 
-3. **_string_categories**  
-   - Stores category values for string-typed columns in `_table_metadata`  
-   - Columns: category identifier, table identifier, column name, category value  
+# 3. **_string_categories**  
+#    - Stores category values for string-typed columns in `_table_metadata`  
+#    - Columns: category identifier, table identifier, column name, category value  
 
-These tables are used to drive synthetic data creation, ensuring datasets are consistent, reproducible, and self-describing.
-"""
+# These tables are used to drive synthetic data creation, ensuring datasets are consistent, reproducible, and self-describing.
+# """
 
 mcp_app = mcp.streamable_http_app()
 
