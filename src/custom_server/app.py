@@ -15,10 +15,9 @@ from typing import Optional
 # Load environment variables from .env file
 load_dotenv() 
 
-
-
 cfg = Config()
 
+user_token = Header(None, alias="X-Forwarded-Access-Token")
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -151,9 +150,9 @@ app = FastAPI(
 async def serve_index():
     return FileResponse(STATIC_DIR / "index.html")
 
-@app.get("/example")
-async def example(user_token: Optional[str] = Header(None, alias="X-Forwarded-Access-Token")):
-    return {"user_token": user_token}
+# @app.get("/example")
+# async def example(user_token: Optional[str] = Header(None, alias="X-Forwarded-Access-Token")):
+#     return {"user_token": user_token}
 
 
 app.mount("/", mcp_app)
