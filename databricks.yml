@@ -22,3 +22,7 @@ targets:
   dev:
     mode: development
     default: true
+
+auth:
+  scopes:
+    - sql

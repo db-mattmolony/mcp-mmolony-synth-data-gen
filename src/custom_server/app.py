@@ -7,6 +7,10 @@ from databricks import sql
 from .prompts import load_prompts
 import os
 from dotenv import load_dotenv
+from fastapi import Header
+from typing import Optional
+
+
 
 # Load environment variables from .env file
 load_dotenv() 
@@ -14,7 +18,6 @@ load_dotenv()
 
 
 cfg = Config()
-
 
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -42,7 +45,8 @@ def create_catalog(catalog_name: str) -> str:
         with sql.connect(
             server_hostname=cfg.host,
             http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
-            credentials_provider=lambda: cfg.authenticate
+            # credentials_provider=lambda: cfg.authenticate,
+            access_token=user_token
         ) as connection:
             with connection.cursor() as cursor:
                 cursor.execute(query)
@@ -60,7 +64,8 @@ def create_schema(catalog_name: str, schema_name: str) -> str:
         with sql.connect(
             server_hostname=cfg.host,
             http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
-            credentials_provider=lambda: cfg.authenticate
+            # credentials_provider=lambda: cfg.authenticate
+            access_token=user_token
         ) as connection:
             with connection.cursor() as cursor:
                 cursor.execute(query)
@@ -111,7 +116,8 @@ def create_metadata_tables(catalog_name: str, schema_name: str) -> str:
         with sql.connect(
             server_hostname=cfg.host,
             http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
-            credentials_provider=lambda: cfg.authenticate
+            # credentials_provider=lambda: cfg.authenticate
+            access_token=user_token
         ) as connection:
             with connection.cursor() as cursor:
                 for i, query in enumerate(queries):
@@ -136,39 +142,6 @@ def get_greeting(name: str) -> str:
 mcp_app = mcp.streamable_http_app()
 
 
-@mcp.prompt("synthetic-data-setup")
-def prompt_synthetic_data_setup() -> str:
-    """How to create synthetic data in Databricks: metadata-first flow."""
-    return """# Databricks MCP – Synthetic Data Metadata Setup
-
-## Use Case
-This MCP server enables an LLM to generate synthetic datasets inside Databricks in a structured and governed way.  
-The flow is:
-1. Create a catalog and schema to house new datasets.  
-2. Populate metadata tables that describe schemas, tables, and columns.  
-3. Use this metadata as the foundation for synthetic data generation.
-
-## Metadata Tables
-Three core tables are required in every schema:
-
-1. **_schema_metadata**  
-   - Stores schema-level information  
-   - Columns: unique schema identifier, schema name, description  
-
-2. **_table_metadata**  
-   - Stores table-level information  
-   - Columns: table identifier, schema identifier, table name, table description, column name, column type, column description  
-
-3. **_string_categories**  
-   - Stores category values for string-typed columns in `_table_metadata`  
-   - Columns: category identifier, table identifier, column name, category value  
-
-These tables are used to drive synthetic data creation, ensuring datasets are consistent, reproducible, and self-describing.
-"""
-
-mcp_app = mcp.streamable_http_app()
-
-
 app = FastAPI(
     lifespan=lambda _: mcp.session_manager.run(),
 )
@@ -177,6 +150,10 @@ app = FastAPI(
 @app.get("/", include_in_schema=False)
 async def serve_index():
     return FileResponse(STATIC_DIR / "index.html")
+
+@app.get("/example")
+async def example(user_token: Optional[str] = Header(None, alias="X-Forwarded-Access-Token")):
+    return {"user_token": user_token}
 
 
 app.mount("/", mcp_app)
