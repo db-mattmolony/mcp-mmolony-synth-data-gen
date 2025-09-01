@@ -72,20 +72,57 @@ def create_schema(catalog_name: str, schema_name: str) -> str:
 @mcp.tool()
 def create_metadata_tables(catalog_name: str, schema_name: str) -> str:
     """
-    Create a new schema in Databricks catalog using a SQL warehouse
+    Create the three synthetic data metadata tables in the specified catalog and schema.
+    Creates _synthetic_schema_metadata, _synthetic_table_metadata, and _string_categories tables.
     """
     try:
-        query = f"CREATE SCHEMA IF NOT EXISTS {catalog_name}.{schema_name};"
+        # SQL queries to create the three metadata tables
+        queries = [
+            f"""
+            CREATE TABLE IF NOT EXISTS {catalog_name}.{schema_name}._synthetic_schema_metadata (
+                table_name STRING COMMENT 'Name of the table in the schema',
+                description STRING COMMENT 'Detailed description of the table purpose and contents'
+            ) USING DELTA
+            COMMENT 'Schema-level metadata describing tables and their purposes for synthetic data generation'
+            """,
+            f"""
+            CREATE TABLE IF NOT EXISTS {catalog_name}.{schema_name}._synthetic_table_metadata (
+                table_name STRING COMMENT 'Name of the table this metadata describes',
+                column_name STRING COMMENT 'Name of the column in the table',
+                data_type STRING COMMENT 'Data type of the column (string, integer, bigint, etc.)',
+                description STRING COMMENT 'Detailed description of what this column contains'
+            ) USING DELTA
+            COMMENT 'Table and column-level metadata describing the structure and meaning of each column for synthetic data generation'
+            """,
+            f"""
+            CREATE TABLE IF NOT EXISTS {catalog_name}.{schema_name}._string_categories (
+                column_name STRING COMMENT 'Name of the string/categorical column',
+                table_name STRING COMMENT 'Name of the table containing this column',
+                data_type STRING COMMENT 'Data type of the column (typically string for categorical data)',
+                description STRING COMMENT 'Description of what this categorical column represents',
+                cardinality ARRAY<STRING> COMMENT 'Array of all possible categorical values for this column',
+                no_of_levels BIGINT COMMENT 'Total number of distinct categorical values (cardinality count)'
+            ) USING DELTA
+            COMMENT 'Categorical data metadata storing all possible values for string columns to ensure consistent synthetic data generation'
+            """
+        ]
+        
+        results = []
         with sql.connect(
             server_hostname=cfg.host,
             http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
             credentials_provider=lambda: cfg.authenticate
         ) as connection:
             with connection.cursor() as cursor:
-                cursor.execute(query)
-                return f"Schema {schema_name} created successfully"
+                for i, query in enumerate(queries):
+                    cursor.execute(query)
+                    table_names = ["_synthetic_schema_metadata", "_synthetic_table_metadata", "_string_categories"]
+                    results.append(f"✓ Created table {catalog_name}.{schema_name}.{table_names[i]}")
+                
+        return f"Successfully created metadata tables in {catalog_name}.{schema_name}:\n" + "\n".join(results)
+        
     except Exception as e:
-        return f"Error querying Databricks Warehouse: {e}"
+        return f"Error creating metadata tables: {e}"
     
 
 
@@ -99,35 +136,35 @@ def get_greeting(name: str) -> str:
 mcp_app = mcp.streamable_http_app()
 
 
-# @mcp.prompt("synthetic-data-setup")
-# def prompt_synthetic_data_setup() -> str:
-#     """How to create synthetic data in Databricks: metadata-first flow."""
-#     return """# Databricks MCP – Synthetic Data Metadata Setup
+@mcp.prompt("synthetic-data-setup")
+def prompt_synthetic_data_setup() -> str:
+    """How to create synthetic data in Databricks: metadata-first flow."""
+    return """# Databricks MCP – Synthetic Data Metadata Setup
 
-# ## Use Case
-# This MCP server enables an LLM to generate synthetic datasets inside Databricks in a structured and governed way.  
-# The flow is:
-# 1. Create a catalog and schema to house new datasets.  
-# 2. Populate metadata tables that describe schemas, tables, and columns.  
-# 3. Use this metadata as the foundation for synthetic data generation.
+## Use Case
+This MCP server enables an LLM to generate synthetic datasets inside Databricks in a structured and governed way.  
+The flow is:
+1. Create a catalog and schema to house new datasets.  
+2. Populate metadata tables that describe schemas, tables, and columns.  
+3. Use this metadata as the foundation for synthetic data generation.
 
-# ## Metadata Tables
-# Three core tables are required in every schema:
+## Metadata Tables
+Three core tables are required in every schema:
 
-# 1. **_schema_metadata**  
-#    - Stores schema-level information  
-#    - Columns: unique schema identifier, schema name, description  
+1. **_schema_metadata**  
+   - Stores schema-level information  
+   - Columns: unique schema identifier, schema name, description  
 
-# 2. **_table_metadata**  
-#    - Stores table-level information  
-#    - Columns: table identifier, schema identifier, table name, table description, column name, column type, column description  
+2. **_table_metadata**  
+   - Stores table-level information  
+   - Columns: table identifier, schema identifier, table name, table description, column name, column type, column description  
 
-# 3. **_string_categories**  
-#    - Stores category values for string-typed columns in `_table_metadata`  
-#    - Columns: category identifier, table identifier, column name, category value  
+3. **_string_categories**  
+   - Stores category values for string-typed columns in `_table_metadata`  
+   - Columns: category identifier, table identifier, column name, category value  
 
-# These tables are used to drive synthetic data creation, ensuring datasets are consistent, reproducible, and self-describing.
-# """
+These tables are used to drive synthetic data creation, ensuring datasets are consistent, reproducible, and self-describing.
+"""
 
 mcp_app = mcp.streamable_http_app()
 
