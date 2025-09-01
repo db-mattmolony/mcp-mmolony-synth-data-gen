@@ -4,13 +4,16 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from databricks.sdk.core import Config
 from databricks import sql
-from prompts import load_prompts
-import os 
+from .prompts import load_prompts
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv() 
 
 
 
 cfg = Config()
-assert os.getenv('DATABRICKS_WAREHOUSE_ID'), "DATABRICKS_WAREHOUSE_ID must be set in app.yaml."
 
 
 
@@ -140,3 +143,13 @@ async def serve_index():
 
 
 app.mount("/", mcp_app)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "custom_server.app:app",
+        host="0.0.0.0", 
+        port=8000,
+        reload=True
+    )

@@ -19,8 +19,10 @@ uv sync
 - start the server locally. Changes will trigger a reload:
 
 ```bash
-uvicorn custom_server.app:app --reload
+uv run custom-server
 ```
+
+This will start the server on http://localhost:8000
 
 ## Deploying a custom MCP server on Databricks Apps
 
@@ -86,3 +88,5 @@ databricks auth token -p <name-of-your-profile>
 ```
 
 Please note that the URL should end with `/mcp/` (including the trailing slash), as this is required for the server to work correctly.
+
+
