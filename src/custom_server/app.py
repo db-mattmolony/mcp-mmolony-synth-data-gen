@@ -4,8 +4,10 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from databricks.sdk.core import Config
 from databricks import sql
-from src.custom_server.prompts import load_prompts
+from prompts import load_prompts
 import os 
+
+
 
 cfg = Config()
 assert os.getenv('DATABRICKS_WAREHOUSE_ID'), "DATABRICKS_WAREHOUSE_ID must be set in app.yaml."
@@ -62,6 +64,26 @@ def create_schema(catalog_name: str, schema_name: str) -> str:
                 return f"Schema {schema_name} created successfully"
     except Exception as e:
         return f"Error querying Databricks Warehouse: {e}"
+    
+    
+@mcp.tool()
+def create_metadata_tables(catalog_name: str, schema_name: str) -> str:
+    """
+    Create a new schema in Databricks catalog using a SQL warehouse
+    """
+    try:
+        query = f"CREATE SCHEMA IF NOT EXISTS {catalog_name}.{schema_name};"
+        with sql.connect(
+            server_hostname=cfg.host,
+            http_path=f"/sql/1.0/warehouses/{os.getenv('DATABRICKS_WAREHOUSE_ID')}",
+            credentials_provider=lambda: cfg.authenticate
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                return f"Schema {schema_name} created successfully"
+    except Exception as e:
+        return f"Error querying Databricks Warehouse: {e}"
+    
 
 
 # Add a dynamic greeting resource
